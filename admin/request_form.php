@@ -96,8 +96,9 @@ include('includes/header.php');
                                         <label>Purpose of Request*</label>
                                         <select class="form-control" name="purposeOfRequest[]" onchange="togglePurpose(this)" required>
                                             <option value="">Select One</option> 
-                                            <option value="A">A</option>
-                                            <option value="B">B</option>            
+                                            <option value="A">A - Audit</option>
+                                            <option value="B">B - Collection / Enforcement of Delinquent Account</option>    
+                                            <option value="C">C - Others</option>    
                                         </select>
                                     </div>
                                 </div>
@@ -124,21 +125,57 @@ include('includes/header.php');
                                     </div>
                                 </div>
 
+                                <div class="row mb-3 porC" style="display: none">
+                                    <div class="col-md-6">
+                                        <label>Others</label>
+                                        <input type="text" name="others[]" class="form-control" placeholder="Please Specify"  />
+                                    </div>
+                                </div>
+
+                                <!-- Inside your HTML template (page-1) -->
                                 <div class="row mb-3">
                                     <div class="col-md-12">
                                         <label class="d-block">SEC Documents Requested*</label>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="AOI[]" value="1">
+
+                                        <!-- Articles of Incorporation -->
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input doc-checkbox" type="checkbox" name="AOI[]" value="1">
                                             <label class="form-check-label">Articles of Incorporation / By-Laws</label>
+                                            <!-- Hidden Year Container inside the same wrapper -->
+                                            <div class="ms-4 mt-1 year-container" style="display: none;">
+                                                <label class="form-label me-1 small">Year:</label>
+                                                <input type="text" name="AOI_year[]" class="form-control d-inline-block w-auto form-control-sm" placeholder="YYYY">
+                                            </div>
                                         </div>
-                                        
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="GIS[]" value="1">
+
+                                        <!-- General Information Sheet -->
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input doc-checkbox" type="checkbox" name="GIS[]" value="1">
                                             <label class="form-check-label">General Information Sheet</label>
+                                            <div class="ms-4 mt-1 year-container" style="display: none;">
+                                                <label class="form-label me-1 small">Year:</label>
+                                                <input type="text" name="GIS_year[]" class="form-control d-inline-block w-auto form-control-sm" placeholder="YYYY">
+                                            </div>
                                         </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="AFS[]" value="1">
+
+                                        <!-- Audited Financial Statement -->
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input doc-checkbox" type="checkbox" name="AFS[]" value="1">
                                             <label class="form-check-label">Audited Financial Statement</label>
+                                            <div class="ms-4 mt-1 year-container" style="display: none;">
+                                                <label class="form-label me-1 small">Year:</label>
+                                                <input type="text" name="AFS_year[]" class="form-control d-inline-block w-auto form-control-sm" placeholder="YYYY">
+                                            </div>
+                                        </div>
+
+                                        <!-- NEW: Additional Supporting Document Upload Module -->
+                                        <div class="mt-4 border-top pt-3">
+                                            <label>Additional Supporting Document</label>
+                                            <div class="row g-2 align-items-center">
+                                                <div class="col-md-4">
+                                                    <input type="file" name="supporting_doc[]" class="form-control form-control-sm" multiple>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -161,6 +198,28 @@ include('includes/header.php');
 <script>
 let currentCount = 1;
 
+// Add this inside your existing <script> tag:
+
+document.getElementById('form-pages-container').addEventListener('change', function(e) {
+    // Check if the changed element is one of our document checkboxes
+    if (e.target && e.target.classList.contains('doc-checkbox')) {
+        const checkbox = e.target;
+        // Find the year-container adjacent to this checkbox
+        const yearContainer = checkbox.closest('.form-check').querySelector('.year-container');
+        
+        if (yearContainer) {
+            if (checkbox.checked) {
+                yearContainer.style.display = 'block';
+            } else {
+                yearContainer.style.display = 'none';
+                // Clear the year input text if unchecked
+                const yearInput = yearContainer.querySelector('input');
+                if (yearInput) yearInput.value = '';
+            }
+        }
+    }
+});
+
 function showPage(pageId, badgeId) {
     document.querySelectorAll('.form-page').forEach(p => p.style.display = 'none');
     document.querySelectorAll('#form-steps-header .badge').forEach(b => {
@@ -176,16 +235,18 @@ function togglePurpose(select) {
     const parent = select.closest('.form-page');
     const porA = parent.querySelector('.porA');
     const porB = parent.querySelector('.porB');
+    const porC = parent.querySelector('.porC');
     porA.style.display = select.value === 'A' ? 'flex' : 'none';
     porB.style.display = select.value === 'B' ? 'flex' : 'none';
+    porC.style.display = select.value === 'C' ? 'flex' : 'none';
 }
 
 document.getElementById('addMore').addEventListener('click', function() {
     const container = document.getElementById('form-pages-container');
     const header = document.getElementById('form-steps-header');
     
-    currentCount++; // Increment for the new form (Form 2, 3, etc.)
-    const index = currentCount - 1; // 0-based index for arrays
+    currentCount++; 
+    const index = currentCount - 1; 
 
     const firstPage = document.getElementById('page-1');
     const newPage = firstPage.cloneNode(true);
@@ -201,6 +262,8 @@ document.getElementById('addMore').addEventListener('click', function() {
         // Reset Value
         if(input.type === 'checkbox' || input.type === 'radio') {
             input.checked = false;
+        } else if (input.type === 'file') {
+            input.value = ''; // CRITICAL: Clear file selection for the clone
         } else {
             input.value = '';
         }
@@ -216,6 +279,12 @@ document.getElementById('addMore').addEventListener('click', function() {
     // Hide conditional rows in the clone
     if(newPage.querySelector('.porA')) newPage.querySelector('.porA').style.display = 'none';
     if(newPage.querySelector('.porB')) newPage.querySelector('.porB').style.display = 'none';
+    if(newPage.querySelector('.porC')) newPage.querySelector('.porC').style.display = 'none';
+    
+    // NEW: Ensure cloned checkboxes reset their corresponding year inputs to hidden
+    newPage.querySelectorAll('.year-container').forEach(container => {
+        container.style.display = 'none';
+    });
 
     // Create Navigation Badge
     const newBadge = document.createElement('span');
@@ -230,6 +299,7 @@ document.getElementById('addMore').addEventListener('click', function() {
     container.appendChild(newPage);
     showPage(newPageId, newBadgeId);
 });
+
 </script>
 
 <?php include('includes/footer.php'); ?>
